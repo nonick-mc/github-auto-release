@@ -19,13 +19,13 @@ jobs:
       - name: Create zip file
         run: |
           git ls-files | grep -vE ".gitattributes" | zip -q -@ release.zip
-          echo "::setOutput name=zip_file::release.zip"
+          echo "zip_file=release.zip" >> $GITHUB_OUTPUT
 
       # 前回のReleaseに使用されたタグをfetch
       - name: Fetch previous tag
         id: previous_tag
         run: |
-          echo "::setOutput name=previous_tag::$(git describe --tags --abbrev=0)"
+          echo "previous_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
 
       # 今回のReleaseに使用するタグを生成
       - name: Create release tag
@@ -39,7 +39,7 @@ jobs:
             echo "init count"
             pre_release_count=0
           fi
-          echo "::setOutput name=release_tag::$today-$((${pre_release_count:-0} + 1))"
+          echo "release_tag=$today-$((${pre_release_count:-0} + 1))" >> $GITHUB_OUTPUT
 
       - name: Debug
         run: |
