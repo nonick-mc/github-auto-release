@@ -12,19 +12,19 @@ jobs:
       TimeZone: "Asia/Tokyo"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       # ブランチに含まれるファイルをzipファイルにまとめる
       - name: Create zip file
         run: |
           git ls-files | grep -vE ".gitattributes|other_file_to_exclude" | zip -q -@ release.zip
-          echo "::set-output name=zip_file::release.zip"
+          echo "::setOutput name=zip_file::release.zip"
 
       # 前回のReleaseに使用されたタグをfetch
       - name: Fetch previous tag
         id: previous_tag
         run: |
-          echo "::set-output name=previous_tag::$(git describe --tags --abbrev=0)"
+          echo "::setOutput name=previous_tag::$(git describe --tags --abbrev=0)"
 
       # 今回のReleaseに使用するタグを生成
       - name: Create release tag
@@ -38,11 +38,13 @@ jobs:
             echo "init count"
             pre_release_count=0
           fi
-          echo "::set-output name=release_tag::$today-$((${pre_release_count:-0} + 1))"
+          echo "::setOutput name=release_tag::$today-$((${pre_release_count:-0} + 1))"
 
       # Releaseを作成
       - name: Create release
         uses: actions/create-release@v1
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.release_tag.outputs.release_tag }}
           release_name: ${{ steps.release_tag.outputs.release_tag }}
