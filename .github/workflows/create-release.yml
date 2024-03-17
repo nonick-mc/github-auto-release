@@ -1,0 +1,52 @@
+name: Create new release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    env:
+      TimeZone: "Asia/Tokyo"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # ブランチに含まれるファイルをzipファイルにまとめる
+      - name: Create zip file
+        run: |
+          git ls-files | grep -vE ".gitattributes|other_file_to_exclude" | zip -q -@ release.zip
+          echo "::set-output name=zip_file::release.zip"
+
+      # 前回のReleaseに使用されたタグをfetch
+      - name: Fetch previous tag
+        id: previous_tag
+        run: |
+          echo "::set-output name=previous_tag::$(git describe --tags --abbrev=0)"
+
+      # 今回のReleaseに使用するタグを生成
+      - name: Create release tag
+        id: release_tag
+        run: |
+          today=$(date +'%Y.%m.%d')
+            pre_tag=(${{ steps.previous_tag.outputs.previous_tag }} -)
+          pre_release_date=${pre_tag[0]}
+          pre_release_count=${pre_tag[1]}
+          if [[ ! $pre_release_date = $today ]]; then
+            echo "init count"
+            pre_release_count=0
+          fi
+          echo "::set-output name=release_tag::$today-$((${pre_release_count:-0} + 1))"
+
+      # Releaseを作成
+      - name: Create release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.release_tag.outputs.release_tag }}
+          release_name: ${{ steps.release_tag.outputs.release_tag }}
+          body: |
+            draft: false
+            prerelease: false
+            files: release.zip
