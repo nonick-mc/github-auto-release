@@ -17,6 +17,7 @@ jobs:
 
       # ブランチに含まれるファイルをzipファイルにまとめる
       - name: Create zip file
+        id: zip_file
         run: |
           git ls-files | grep -vE ".gitattributes" | zip -q -@ release.zip
           echo "zip_file=release.zip" >> $GITHUB_OUTPUT
@@ -47,11 +48,19 @@ jobs:
 
       # Releaseを作成
       - name: Create release
+        id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.release_tag.outputs.release_tag }}
           release_name: ${{ steps.release_tag.outputs.release_tag }}
-          body: |
-            draft: false
-            prerelease: false
-            files: release.zip
+          draft: false
+          prerelease: false
+
+      # Releaseにzipファイルを添付
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: './output/release.zip'
+          asset_name: Example_${{ steps.zip_file.outputs.release_tag }}.zip
+          asset_content_type: application/zip
