@@ -20,7 +20,7 @@ jobs:
         id: zip_file
         run: |
           git ls-files | grep -vE ".gitattributes" | zip -q -@ release.zip
-          echo "zip_file=release.zip" >> $GITHUB_OUTPUT
+          echo "zip_path=$(realpath output.zip)" >> $GITHUB_OUTPUT
 
       # 前回のReleaseに使用されたタグをfetch
       - name: Fetch previous tag
@@ -39,11 +39,7 @@ jobs:
             echo "init count"
             pre_release_count=0
           fi
-          echo "::set-output name=release_tag::$today-$(($pre_release_count + 1))"
-
-      - name: Debug
-        run: |
-          echo "Release Tag: ${{ steps.release_tag.outputs.release_tag }}" # Log release tag
+          echo "release_tag=$today-$(($pre_release_count + 1))" >> $GITHUB_OUTPUT
 
       # Releaseを作成
       - name: Create release
