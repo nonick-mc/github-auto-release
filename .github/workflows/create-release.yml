@@ -26,21 +26,20 @@ jobs:
       - name: Fetch previous tag
         id: previous_tag
         run: |
-          echo "previous_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          echo "previous_tag=$(curl -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)" >> $GITHUB_OUTPUT
 
       # 今回のReleaseに使用するタグを生成
       - name: Create release tag
         id: release_tag
         run: |
           today=$(date +'%Y.%m.%d')
-            pre_tag=(${{ steps.previous_tag.outputs.previous_tag }} -)
-          pre_release_date=${pre_tag[0]}
-          pre_release_count=${pre_tag[1]}
+          pre_release_date=$(echo ${{ steps.previous_tag.outputs.previous_tag }} | awk -F'-' '{print $1}')
+          pre_release_count=$(echo ${{ steps.previous_tag.outputs.previous_tag }} | awk -F'-' '{print $2}')
           if [[ ! $pre_release_date = $today ]]; then
             echo "init count"
             pre_release_count=0
           fi
-          echo "release_tag=$today-$((${pre_release_count:-0} + 1))" >> $GITHUB_OUTPUT
+          echo "::set-output name=release_tag::$today-$(($pre_release_count + 1))"
 
       - name: Debug
         run: |
@@ -62,5 +61,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: './output/release.zip'
-          asset_name: Example_${{ steps.zip_file.outputs.release_tag }}.zip
+          asset_name: ${{ github.repository }}_${{ steps.zip_file.outputs.release_tag }}.zip
           asset_content_type: application/zip
