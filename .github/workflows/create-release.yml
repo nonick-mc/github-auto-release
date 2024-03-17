@@ -10,6 +10,7 @@ jobs:
 
     env:
       TimeZone: "Asia/Tokyo"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +18,7 @@ jobs:
       # ブランチに含まれるファイルをzipファイルにまとめる
       - name: Create zip file
         run: |
-          git ls-files | grep -vE ".gitattributes|other_file_to_exclude" | zip -q -@ release.zip
+          git ls-files | grep -vE ".gitattributes" | zip -q -@ release.zip
           echo "::setOutput name=zip_file::release.zip"
 
       # 前回のReleaseに使用されたタグをfetch
@@ -40,11 +41,13 @@ jobs:
           fi
           echo "::setOutput name=release_tag::$today-$((${pre_release_count:-0} + 1))"
 
+      - name: Debug
+        run: |
+          echo "Release Tag: ${{ steps.release_tag.outputs.release_tag }}" # Log release tag
+
       # Releaseを作成
       - name: Create release
         uses: actions/create-release@v1
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.release_tag.outputs.release_tag }}
           release_name: ${{ steps.release_tag.outputs.release_tag }}
